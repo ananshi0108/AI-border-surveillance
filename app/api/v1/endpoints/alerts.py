@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.alert import Alert
-from app.schemas.alert import AlertCreate, AlertResponse
+from app.schemas.alert import AlertCreate, AlertResponse, AlertStatusUpdate
 
 
 router = APIRouter()
@@ -48,5 +48,23 @@ def get_alert(
             status_code=404,
             detail="Alert not found",
         )
+
+    return alert
+
+@router.patch("/{alert_id}", response_model=AlertResponse)
+def update_alert_status(
+    alert_id: int,
+    alert_data: AlertStatusUpdate,
+    db: Session = Depends(get_db),
+):
+    alert = db.get(Alert, alert_id)
+
+    if alert is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    alert.status = alert_data.status
+
+    db.commit()
+    db.refresh(alert)
 
     return alert

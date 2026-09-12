@@ -50,6 +50,8 @@ function App() {
   const [activePage, setActivePage] = useState("dashboard");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [liveDetections, setLiveDetections] = useState(27);
+  const [cameras, setCameras] = useState([]);
+  const [alerts, setAlerts] = useState([]);
   useEffect(() => {
   const interval = setInterval(() => {
     setLiveDetections((count) => (count >= 35 ? 27 : count + 1));
@@ -57,6 +59,28 @@ function App() {
 
   return () => clearInterval(interval);
 }, []);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [camerasResponse, alertsResponse] = await Promise.all([
+          fetch("http://127.0.0.1:8000/api/v1/cameras/"),
+          fetch("http://127.0.0.1:8000/api/v1/alerts/"),
+        ]);
+
+        const camerasData = await camerasResponse.json();
+        const alertsData = await alertsResponse.json();
+
+        setCameras(camerasData);
+        setAlerts(alertsData);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
   if (!isLoggedIn) {
   return <Login onLogin={() => setIsLoggedIn(true)} />;
 }
@@ -163,7 +187,9 @@ function App() {
   onClick={() => setActivePage("alerts")}
 >
   🔔
-  <span className="notification-count">3</span>
+  <span className="notification-count">
+    {alerts.filter((alert) => alert.status === "NEW").length}
+  </span>
 </button>
             <div className="live-badge">
               <span></span> SYSTEM LIVE
@@ -211,8 +237,10 @@ function App() {
             <div className="stat-icon camera">📹</div>
             <div>
               <p>Active Cameras</p>
-              <h2>24</h2>
-              <span className="positive">● 22 online</span>
+              <h2>{cameras.length}</h2>
+              <span className="positive">
+                ● {cameras.filter((camera) => camera.status === "ONLINE").length} online
+              </span>
             </div>
           </div>
 
@@ -220,8 +248,10 @@ function App() {
             <div className="stat-icon alert">🚨</div>
             <div>
               <p>Active Alerts</p>
-              <h2>03</h2>
-              <span className="warning">3 high priority</span>
+              <h2>{alerts.filter((alert) => alert.status === "NEW").length}</h2>
+              <span className="warning">
+                {alerts.filter((alert) => alert.status === "NEW").length} active
+              </span>
             </div>
           </div>
 
@@ -321,32 +351,25 @@ function App() {
 </button>
             </div>
 
-            <div className="alert-item high">
-              <div className="alert-symbol">!</div>
-              <div>
-                <strong>Unauthorized Entry</strong>
-                <p>Camera 03 · West Sector</p>
-                <small>2 minutes ago</small>
-              </div>
-            </div>
+            {alerts.slice(0, 3).map((alert) => (
+              <div className="alert-item high" key={alert.id}>
+               <div className="alert-symbol">!</div>
 
-            <div className="alert-item medium">
-              <div className="alert-symbol">!</div>
-              <div>
-                <strong>Suspicious Vehicle</strong>
-                <p>Camera 01 · North Gate</p>
-                <small>8 minutes ago</small>
+               <div>
+                <strong>{alert.alert_type}</strong>
+                <p>
+                 Camera {alert.camera_id} · Zone {alert.zone_id}
+                </p>
+                <small>
+                  {new Date(alert.timestamp).toLocaleString()}
+                </small>
               </div>
             </div>
+          ))}
 
-            <div className="alert-item low">
-              <div className="alert-symbol">i</div>
-              <div>
-                <strong>Person Detected</strong>
-                <p>Camera 04 · South Gate</p>
-                <small>15 minutes ago</small>
-              </div>
-            </div>
+            
+
+            
 
           </div>
 

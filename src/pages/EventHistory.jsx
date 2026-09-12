@@ -1,46 +1,28 @@
+import { useEffect, useState } from "react";
+
 function EventHistory() {
-  const events = [
-    {
-      id: "EVT-001",
-      type: "Unauthorized Entry",
-      camera: "CAM-03",
-      location: "West Sector",
-      time: "Today, 14:32",
-      status: "Reviewed",
-    },
-    {
-      id: "EVT-002",
-      type: "Vehicle Detected",
-      camera: "CAM-01",
-      location: "North Gate",
-      time: "Today, 14:18",
-      status: "Reviewed",
-    },
-    {
-      id: "EVT-003",
-      type: "Person Detected",
-      camera: "CAM-04",
-      location: "South Gate",
-      time: "Today, 13:55",
-      status: "Pending",
-    },
-    {
-      id: "EVT-004",
-      type: "Virtual Fence Intrusion",
-      camera: "CAM-07",
-      location: "Border Fence",
-      time: "Today, 13:41",
-      status: "Pending",
-    },
-    {
-      id: "EVT-005",
-      type: "Night Movement",
-      camera: "CAM-12",
-      location: "Main Road",
-      time: "Today, 12:26",
-      status: "Reviewed",
-    },
-  ];
+  const [events, setEvents] = useState([]);
+
+useEffect(() => {
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/v1/alerts/"
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch events");
+      }
+
+      const data = await response.json();
+      setEvents(data);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
+
+  fetchEvents();
+}, []);
 
   return (
     <div className="event-history-page">
@@ -71,23 +53,34 @@ function EventHistory() {
           <tbody>
             {events.map((event) => (
               <tr key={event.id}>
-                <td>{event.id}</td>
-                <td>{event.type}</td>
-                <td>{event.camera}</td>
-                <td>{event.location}</td>
-                <td>{event.time}</td>
-                <td>
-                  <span
-                    className={
-                      event.status === "Pending"
-                        ? "event-pending"
-                        : "event-reviewed"
+               <td>EVT-{String(event.id).padStart(3, "0")}</td>
+
+               <td>{event.alert_type}</td>
+
+               <td>
+                 CAM-{String(event.camera_id).padStart(2, "0")}
+               </td>
+
+               <td>
+                 Zone {event.zone_id}
+               </td>
+
+               <td>
+                 {new Date(event.timestamp).toLocaleString()}
+               </td>
+
+               <td>
+                 <span
+                   className={
+                    event.status === "NEW"
+                    ? "event-pending"
+                    : "event-reviewed"
                     }
                   >
-                    {event.status}
-                  </span>
-                </td>
-              </tr>
+                    {event.status === "NEW" ? "Pending" : "Reviewed"}
+                 </span>
+               </td>
+             </tr>
             ))}
           </tbody>
 

@@ -2,51 +2,69 @@ import { useEffect, useState } from "react";
 
 function Alerts() {
   const [filter, setFilter] = useState("All");
-  const [liveCount, setLiveCount] = useState(3);
+  const [alerts, setAlerts] = useState([]);
   const [reviewedAlerts, setReviewedAlerts] = useState([]);
 
+  const liveCount = alerts.filter((alert) => alert.status === "NEW").length;
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLiveCount((count) => (count >= 5 ? 3 : count + 1));
-    }, 5000);
+  const fetchAlerts = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/v1/alerts/"
+      );
 
-    return () => clearInterval(interval);
-  }, []);
+      if (!response.ok) {
+        throw new Error("Failed to fetch alerts");
+      }
 
-  const alerts = [
-    {
-      id: "ALT-001",
-      type: "Unauthorized Entry",
-      camera: "CAM-03",
-      location: "West Sector",
-      priority: "High",
-      time: "2 minutes ago",
-    },
-    {
-      id: "ALT-002",
-      type: "Suspicious Vehicle",
-      camera: "CAM-01",
-      location: "North Gate",
-      priority: "Medium",
-      time: "8 minutes ago",
-    },
-    {
-      id: "ALT-003",
-      type: "Person Detected",
-      camera: "CAM-04",
-      location: "South Gate",
-      priority: "Low",
-      time: "15 minutes ago",
-    },
-  ];
+      const data = await response.json();
+      setAlerts(data);
+    } catch (error) {
+      console.error("Error fetching alerts:", error);
+    }
+  };
+
+  fetchAlerts();
+}, []);
+
+
 
   const filteredAlerts =
     filter === "All"
       ? alerts
       : alerts.filter((alert) => alert.priority === filter);
 
-  const markAsReviewed = (id) => {
-    setReviewedAlerts((previous) => [...previous, id]);
+  const markAsReviewed = async (id) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/v1/alerts/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "ACKNOWLEDGED",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update alert");
+      }
+
+      setReviewedAlerts((previous) => [...previous, id]);
+      setAlerts((previous) =>
+        previous.map((alert) =>
+          alert.id === id
+            ? { ...alert, status: "ACKNOWLEDGED" }
+            : alert
+        )
+      );
+    } catch (error) {
+      console.error("Error updating alert:", error);
+    }
   };
 
   return (
@@ -108,15 +126,17 @@ function Alerts() {
       <div className="alerts-list">
         {filteredAlerts.map((alert) => (
           <div className="alert-card" key={alert.id}>
-            <h3>{alert.type}</h3>
+            <h3>{alert.alert_type}</h3>
 
-            <p>Camera: {alert.camera}</p>
+            <p>Camera: Camera {alert.camera_id}</p>
 
-            <p>Location: {alert.location}</p>
+            <p>Zone: Zone {alert.zone_id}</p>
 
-            <p>Priority: {alert.priority}</p>
+            <p>Target: {alert.target_class}</p>
 
-            <p>Time: {alert.time}</p>
+            <p>Confidence: {(alert.confidence * 100).toFixed(1)}%</p>
+
+            <p>Time: {new Date(alert.timestamp).toLocaleString()}</p>
 
             <small>Event ID: {alert.id}</small>
 

@@ -1,17 +1,76 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function VirtualFence() {
-  const [selectedCamera, setSelectedCamera] = useState("CAM-03");
+  const [selectedCamera, setSelectedCamera] = useState(1);
   const [fenceSaved, setFenceSaved] = useState(true);
   const [drawing, setDrawing] = useState(false);
   const [fencePoints, setFencePoints] = useState([]);
+  const [zones, setZones] = useState([]);
 
-  const cameras = [
-    { id: "CAM-01", location: "North Gate" },
-    { id: "CAM-03", location: "West Sector" },
-    { id: "CAM-04", location: "South Gate" },
-    { id: "CAM-07", location: "Border Fence" },
-  ];
+  const [cameras, setCameras] = useState([]);
+
+  useEffect(() => {
+    const fetchCameras = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/v1/cameras/"
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch cameras");
+        }
+
+        const data = await response.json();
+        setCameras(data);
+
+        if (data.length > 0) {
+          setSelectedCamera(data[0].id);
+        }
+      } catch (error) {
+        console.error("Error fetching cameras:", error);
+      }
+    };
+
+    fetchCameras();
+  }, []);
+
+  useEffect(() => {
+    const fetchZones = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/v1/zones/"
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch zones");
+        }
+
+        const data = await response.json();
+        setZones(data);
+
+        const polygonZone = data.find(
+          (zone) =>
+            zone.camera_id === Number(selectedCamera) &&
+            zone.zone_type === "POLYGON" &&
+            zone.is_active
+        );
+
+        if (polygonZone) {
+          setFencePoints(
+            polygonZone.coordinates.map(([x, y]) => ({
+              x: x * 100,
+              y: y * 100,
+            }))
+          );
+          setFenceSaved(true);
+        }
+      } catch (error) {
+        console.error("Error fetching zones:", error);
+      }
+    };
+
+    fetchZones();
+  }, [selectedCamera]);
 
   const clearFence = () => {
     setFenceSaved(false);
@@ -19,12 +78,49 @@ function VirtualFence() {
     setFencePoints([]);
   };
 
-  const saveFence = () => {
-    if (fencePoints.length >= 3) {
-      setFenceSaved(true);
-      setDrawing(false);
+  const saveFence = async () => {
+  if (fencePoints.length < 3) {
+    alert("Please select at least 3 points.");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/v1/zones/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          camera_id: Number(selectedCamera),
+          name: "Restricted Area",
+          zone_type: "POLYGON",
+          coordinates: fencePoints.map((point) => [
+            point.x / 100,
+            point.y / 100,
+          ]),
+          trigger_type: "ALL",
+          is_active: true,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to save fence");
     }
-  };
+
+    await response.json();
+
+    setFenceSaved(true);
+    setDrawing(false);
+
+    alert("Fence saved successfully.");
+  } catch (error) {
+    console.error("Error saving fence:", error);
+    alert("Failed to save fence.");
+  }
+};
 
   const handleCameraClick = (e) => {
     if (!drawing) return;
@@ -71,7 +167,7 @@ function VirtualFence() {
           >
             {cameras.map((camera) => (
               <option key={camera.id} value={camera.id}>
-                {camera.id} — {camera.location}
+                CAM-{String(camera.id).padStart(2, "0")} — {camera.location}
               </option>
             ))}
           </select>
@@ -114,7 +210,9 @@ function VirtualFence() {
           <div className="fence-camera-top">
             <span className="live-label">● LIVE</span>
 
-            <span>{selectedCamera}</span>
+            <span>
+               CAM-{String(selectedCamera).padStart(2, "0")}
+            </span>
           </div>
 
           <div

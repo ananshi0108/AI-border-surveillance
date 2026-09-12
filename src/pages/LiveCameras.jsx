@@ -1,69 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function LiveCameras() {
   const [filter, setFilter] = useState("All");
 const [search, setSearch] = useState("");
+const [cameras, setCameras] = useState([]);
 
-  const cameras = [
-    {
-      id: "CAM-01",
-      location: "North Gate",
-      status: "Normal",
-      persons: 4,
-      vehicles: 2,
-      mode: "Day Mode",
-    },
-    {
-      id: "CAM-02",
-      location: "East Sector",
-      status: "Normal",
-      persons: 2,
-      vehicles: 1,
-      mode: "Day Mode",
-    },
-    {
-      id: "CAM-03",
-      location: "West Sector",
-      status: "Alert",
-      persons: 7,
-      vehicles: 3,
-      mode: "Night Mode",
-    },
-    {
-      id: "CAM-04",
-      location: "South Gate",
-      status: "Normal",
-      persons: 3,
-      vehicles: 1,
-      mode: "Day Mode",
-    },
-    {
-      id: "CAM-07",
-      location: "Border Fence",
-      status: "Alert",
-      persons: 5,
-      vehicles: 0,
-      mode: "Night Mode",
-    },
-    {
-      id: "CAM-12",
-      location: "Main Road",
-      status: "Normal",
-      persons: 1,
-      vehicles: 4,
-      mode: "Day Mode",
-    },
-  ];
+useEffect(() => {
+  const fetchCameras = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/v1/cameras/"
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch cameras");
+      }
+
+      const data = await response.json();
+      setCameras(data);
+    } catch (error) {
+      console.error("Error fetching cameras:", error);
+    }
+  };
+
+  fetchCameras();
+}, []);
+
+  
 
  const filteredCameras = cameras.filter((camera) => {
   const matchesFilter =
     filter === "All" ||
-    (filter === "Normal" && camera.status === "Normal") ||
-    (filter === "Alerts" && camera.status === "Alert") ||
+    (filter === "Normal" && camera.status === "ONLINE") ||
+    (filter === "Alerts" && camera.status === "OFFLINE") ||
     (filter === "Night Mode" && camera.mode === "Night Mode");
 
   const matchesSearch =
-    camera.id.toLowerCase().includes(search.toLowerCase()) ||
+    String(camera.id).toLowerCase().includes(search.toLowerCase()) ||
     camera.location.toLowerCase().includes(search.toLowerCase());
 
   return matchesFilter && matchesSearch;
@@ -80,7 +53,8 @@ const [search, setSearch] = useState("");
 
         <div className="camera-summary">
           <span className="online-dot"></span>
-           6 / 6 Cameras Online
+           {cameras.filter((camera) => camera.status === "ONLINE").length} /{" "}
+           {cameras.length} Cameras Online
         </div>
       </div>
 
@@ -135,10 +109,12 @@ const [search, setSearch] = useState("");
           <div className="large-camera-card" key={camera.id}>
             <div className="large-feed">
               <div className="feed-top">
-                <span className="live-label">● LIVE</span>
+                <span className="live-label">
+                 ● {camera.status === "ONLINE" ? "LIVE" : "OFFLINE"}
+                </span>
 
                 <span className="camera-mode">
-                  {camera.mode}
+                  {camera.status}
                 </span>
               </div>
 
@@ -153,25 +129,25 @@ const [search, setSearch] = useState("");
               )}
 
               <div className="feed-camera-id">
-                {camera.id}
+                CAM-{String(camera.id).padStart(2, "0")}
               </div>
             </div>
 
             <div className="large-camera-info">
               <div className="camera-title">
                 <div>
-                  <h3>{camera.id}</h3>
+                  <h3>CAM-{String(camera.id).padStart(2, "0")}</h3>
                   <p>📍 {camera.location}</p>
                 </div>
 
                 <span
-                  className={
-                    camera.status === "Alert"
-                      ? "status-alert"
-                      : "status-normal"
-                  }
+                 className={
+                  camera.status === "ONLINE"
+                  ? "status-normal"
+                  : "status-alert"
+                 }
                 >
-                  {camera.status}
+                   {camera.status}
                 </span>
               </div>
 
@@ -189,7 +165,7 @@ const [search, setSearch] = useState("");
                 <div>
                   <span>AI Status</span>
                   <strong className="ai-active">
-                    Active
+                    {camera.status === "ONLINE" ? "Active" : "Offline"}
                   </strong>
                 </div>
               </div>
