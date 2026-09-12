@@ -1,0 +1,20 @@
+# Core Web Framework & ASGI Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+
+# Configuration & Settings
+pydantic-settings>=2.4.0
+python-dotenv>=1.0.0
+
+# Database ORM & Drivers
+sqlalchemy>=2.0.30
+psycopg2-binary>=2.9.9
+
+# Testing & Client
+httpx>=0.28.0
+pytest>=8.0.0
+
+# Computer Vision & Video Processing (Phase 3)
+opencv-python-headless>=4.10.0
+numpy>=1.26.0
+ultralytics>=8.3.0

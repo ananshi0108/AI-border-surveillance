@@ -1,0 +1,38 @@
+# Python virtual environment
+.venv/
+env/
+venv/
+ENV/
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Environment variables & secrets
+.env
+*.env.local
+
+# Local media storage (snapshots and clips)
+storage/snapshots/*
+!storage/snapshots/.gitkeep
+storage/clips/*
+!storage/clips/.gitkeep
+
+# IDE & OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local database
+*.db
+
+# YOLO model weights
+*.pt
+
+# Generated media
+storage/*.mp4
+!storage/border_cctv_demo.mp4
