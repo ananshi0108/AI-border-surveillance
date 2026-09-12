@@ -36,3 +36,4 @@ storage/clips/*
 # Generated media
 storage/*.mp4
 !storage/border_cctv_demo.mp4
+node_modules/
