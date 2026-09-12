@@ -4,7 +4,7 @@ An edge-first, AI-driven surveillance backend transforming standard IP/RTSP CCTV
 
 ---
 
-## 🛠️ Tech Stack (Phase 1)
+## Tech Stack (Phase 1)
 - **Runtime**: Python 3.13
 - **Framework**: FastAPI + Uvicorn
 - **Data Validation**: Pydantic v2 & Pydantic Settings
@@ -13,7 +13,7 @@ An edge-first, AI-driven surveillance backend transforming standard IP/RTSP CCTV
 
 ---
 
-## 📁 Directory Structure
+## Directory Structure
 ```text
 ProjectSih/
 ├── .env.example              # Template for environment settings
@@ -44,7 +44,7 @@ ProjectSih/
 
 ---
 
-## 🚀 Quick Start Guide
+## Quick Start Guide
 
 ### 1. Activate the Virtual Environment
 ```bash
