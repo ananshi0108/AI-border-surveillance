@@ -37,3 +37,5 @@ storage/clips/*
 storage/*.mp4
 !storage/border_cctv_demo.mp4
 node_modules/
+ai-cv/models/*.onnx
+ai-cv/models/*.pt
