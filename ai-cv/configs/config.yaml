@@ -1,0 +1,61 @@
+# IBVAP AI/CV pipeline configuration
+# Change values here instead of editing code.
+
+runtime:
+  backend: pytorch          # pytorch | onnx | tensorrt
+  device: cpu               # cpu | cuda:0
+  target_fps: 10            # throttle processing for edge boxes
+
+detection:
+  model_path: models/yolov8n.pt
+  onnx_path: models/yolov8n.onnx
+  tensorrt_path: models/yolov8n.engine
+  confidence: 0.35
+  iou: 0.45
+  classes:                  # COCO ids: 0=person, 2=car, 3=motorcycle, 5=bus, 7=truck
+    person: 0
+    car: 2
+    motorcycle: 3
+    bus: 5
+    truck: 7
+  tracker: bytetrack        # bytetrack | deepsort
+  bytetrack_cfg: bytetrack.yaml   # ultralytics built-in config name
+
+face:
+  model_path: models/face_detection_yunet_2023mar.onnx
+  input_size: [320, 320]
+  score_threshold: 0.7
+  nms_threshold: 0.3
+
+anpr:
+  plate_model_path: models/plate_yolov8n.pt   # optional fine-tuned plate detector; falls back to contour method if missing
+  ocr_engine: easyocr        # easyocr | tesseract
+  ocr_languages: [en]
+  min_plate_confidence: 0.4
+  plate_aspect_ratio_range: [2.0, 6.0]   # width/height sanity filter for contour fallback
+
+enhancement:
+  method: retinex            # retinex | zero_dce | none
+  night_brightness_threshold: 60   # mean pixel value below which enhancement auto-triggers
+  zero_dce_weights: models/zero_dce.pth
+
+analytics:
+  virtual_fence:
+    enabled: true
+    # line defined as two (x, y) points in pixel coordinates of the frame
+    line_start: [0, 400]
+    line_end: [1280, 400]
+    direction: both           # both | in_to_out | out_to_in
+  loitering:
+    enabled: true
+    dwell_seconds: 30         # flag a tracked object stationary/present beyond this
+    movement_pixel_threshold: 40  # max centroid movement (px) still considered "loitering"
+
+alerts:
+  log_dir: logs
+  event_log_file: events.jsonl
+  save_snapshots: true
+  snapshot_dir: logs/snapshots
+
+video:
+  resize_width: 1280   # None to keep original resolution
