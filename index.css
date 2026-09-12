@@ -1843,3 +1843,105 @@ nav a.active {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
 }
+.settings-page h1 {
+  margin-bottom: 8px;
+}
+
+.settings-page > p {
+  color: #8190a5;
+  font-size: 14px;
+  margin-bottom: 25px;
+}
+
+.settings-card {
+  background: #101b2d;
+  border: 1px solid #1c2b40;
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.settings-card h2 {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 17px 0;
+  border-bottom: 1px solid #1e2b3d;
+}
+
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-row strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.setting-row small {
+  color: #718096;
+  font-size: 12px;
+}
+
+.toggle-button {
+  min-width: 52px;
+  padding: 7px 10px;
+  background: #17212d;
+  color: #718096;
+  border: 1px solid #304052;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.toggle-button.on {
+  background: #142c25;
+  color: #4ade80;
+  border-color: #286043;
+}
+
+.system-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.system-info div {
+  background: #0d1726;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #1d2a3d;
+}
+
+.system-info span {
+  display: block;
+  color: #718096;
+  font-size: 11px;
+  margin-bottom: 7px;
+}
+
+.system-info strong {
+  font-size: 13px;
+}
+
+.system-info .operational {
+  color: #4ade80;
+}
+
+@media (max-width: 700px) {
+  .system-info {
+    grid-template-columns: 1fr;
+  }
+
+  .setting-row {
+    align-items: flex-start;
+  }
+}

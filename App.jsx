@@ -45,6 +45,11 @@ const pageInfo = {
     title: "Virtual Fence Configuration",
     subtitle: "Define restricted surveillance zones",
   },
+  settings: {
+  breadcrumb: "Dashboard / Settings",
+  title: "System Settings",
+  subtitle: "Configure surveillance system preferences and controls"
+},
 };
 function App() {
   const [activePage, setActivePage] = useState("dashboard");
