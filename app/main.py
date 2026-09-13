@@ -3,10 +3,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
-from app.core.database import Base, engine
+from app.core.database import Base, engine, SessionLocal
 from app.api.v1.api import api_router
 
 
+from app.models.camera import Camera
 from app.services.vision.manager import stream_manager
 
 
@@ -16,6 +17,25 @@ async def lifespan(app: FastAPI):
     # Create all database tables registered on Base metadata
     Base.metadata.create_all(bind=engine)
     print(f"[*] {settings.PROJECT_NAME} initialized in [{settings.NODE_TYPE}] mode.")
+
+    # Auto-start the CV pipeline (StreamReader -> YOLO -> Geometry) for
+    # every active camera already registered, so live feeds/alerts work
+    # as soon as the backend boots, without a manual "start" call.
+    db = SessionLocal()
+    try:
+        active_cameras = db.query(Camera).filter(Camera.is_active.is_(True)).all()
+        for camera in active_cameras:
+            try:
+                stream_manager.ensure_started(
+                    camera_id=camera.id,
+                    source=camera.rtsp_url,
+                    camera_name=camera.name,
+                )
+            except Exception as exc:
+                print(f"[!] Failed to auto-start camera {camera.id}: {exc}")
+    finally:
+        db.close()
+
     yield
     # Gracefully release any active video streams on shutdown
     stream_manager.stop_all()

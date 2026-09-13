@@ -67,6 +67,32 @@ class StreamManager:
 
         return pipeline
 
+    def ensure_started(
+        self,
+        camera_id: int,
+        source: Union[str, int],
+        target_fps: Optional[float] = None,
+        camera_name: Optional[str] = None,
+    ) -> LivePipeline:
+        """
+        Returns the running pipeline for a camera, starting it first
+        (with the given source) if it isn't already active.
+
+        Used by the streaming/snapshot API endpoints so a frontend can
+        simply request a feed without needing a separate "start" call.
+        """
+
+        existing = self._pipelines.get(camera_id)
+        if existing is not None and existing.reader.is_running:
+            return existing
+
+        return self.start_stream(
+            camera_id=camera_id,
+            source=source,
+            target_fps=target_fps,
+            camera_name=camera_name,
+        )
+
     def stop_stream(self, camera_id: int) -> bool:
         """
         Stop the complete pipeline for a camera.

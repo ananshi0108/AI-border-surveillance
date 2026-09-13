@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const API_BASE = "http://127.0.0.1:8000/api/v1";
+
 function VirtualFence() {
   const [selectedCamera, setSelectedCamera] = useState(1);
   const [fenceSaved, setFenceSaved] = useState(true);
@@ -8,13 +10,12 @@ function VirtualFence() {
   const [zones, setZones] = useState([]);
 
   const [cameras, setCameras] = useState([]);
+  const [feedError, setFeedError] = useState(false);
 
   useEffect(() => {
     const fetchCameras = async () => {
       try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/api/v1/cameras/"
-        );
+        const response = await fetch(`${API_BASE}/cameras/`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch cameras");
@@ -34,12 +35,15 @@ function VirtualFence() {
     fetchCameras();
   }, []);
 
+  // Reset the live-feed error state whenever a different camera is chosen.
+  useEffect(() => {
+    setFeedError(false);
+  }, [selectedCamera]);
+
   useEffect(() => {
     const fetchZones = async () => {
       try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/api/v1/zones/"
-        );
+        const response = await fetch(`${API_BASE}/zones/`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch zones");
@@ -86,7 +90,7 @@ function VirtualFence() {
 
   try {
     const response = await fetch(
-      "http://127.0.0.1:8000/api/v1/zones/",
+      `${API_BASE}/zones/`,
       {
         method: "POST",
         headers: {
@@ -223,6 +227,15 @@ function VirtualFence() {
             onClick={handleCameraClick}
           >
 
+            {!feedError && (
+              <img
+                className="fence-live-feed"
+                src={`${API_BASE}/cameras/${selectedCamera}/stream`}
+                alt={`Live feed for camera ${selectedCamera}`}
+                onError={() => setFeedError(true)}
+              />
+            )}
+
             <div className="camera-grid-lines"></div>
 
             {fenceSaved && fencePoints.length === 0 && (
@@ -260,10 +273,12 @@ function VirtualFence() {
               </div>
             ))}
 
-            <div className="camera-placeholder">
-              📹
-              <span>Camera Feed</span>
-            </div>
+            {feedError && (
+              <div className="camera-placeholder">
+                📹
+                <span>Camera Feed</span>
+              </div>
+            )}
 
             <div className="camera-overlay">
               <span>{selectedCamera}</span>

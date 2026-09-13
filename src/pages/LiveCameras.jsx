@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 
+const API_BASE = "http://127.0.0.1:8000/api/v1";
+
 function LiveCameras() {
   const [filter, setFilter] = useState("All");
 const [search, setSearch] = useState("");
 const [cameras, setCameras] = useState([]);
+const [feedErrors, setFeedErrors] = useState({});
 
 useEffect(() => {
   const fetchCameras = async () => {
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/v1/cameras/"
-      );
+      const response = await fetch(`${API_BASE}/cameras/`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch cameras");
@@ -119,7 +120,18 @@ useEffect(() => {
               </div>
 
               <div className="feed-center">
-                📹
+                {camera.status === "ONLINE" && !feedErrors[camera.id] ? (
+                  <img
+                    className="live-feed-img"
+                    src={`${API_BASE}/cameras/${camera.id}/stream`}
+                    alt={`Live AI-annotated feed for camera ${camera.id}`}
+                    onError={() =>
+                      setFeedErrors((prev) => ({ ...prev, [camera.id]: true }))
+                    }
+                  />
+                ) : (
+                  "📹"
+                )}
               </div>
 
               {camera.status === "Alert" && (

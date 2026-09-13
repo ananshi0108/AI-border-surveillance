@@ -12,8 +12,10 @@ Camera Stream
 import logging
 import threading
 import time
-from typing import Optional
+from typing import List, Optional
 
+import cv2
+import numpy as np
 from sqlalchemy import select
 
 from app.core.database import SessionLocal
@@ -21,6 +23,7 @@ from app.models.camera import Camera
 from app.models.zone import Zone
 from app.services.alerts.service import alert_service
 from app.services.alerts.snapshot import snapshot_service
+from app.services.vision.detection import DetectionResult
 from app.services.vision.detector import YOLODetector
 from app.services.vision.rules import GeometryRuleEngine
 from app.services.vision.stream_reader import StreamReader
@@ -79,6 +82,12 @@ class LivePipeline:
         # Prevent repeated alerts for the same camera/zone/class.
         self._last_alert_times = {}
         self._alert_cooldown = 10.0
+
+        # Latest annotated (boxes + zones drawn) frame, exposed to the
+        # frontend via the MJPEG / snapshot API endpoints.
+        self._frame_lock = threading.Lock()
+        self._latest_annotated_frame: Optional[np.ndarray] = None
+        self._latest_detection_count: int = 0
 
     # ------------------------------------------------------------------
     # PUBLIC METHODS
@@ -164,13 +173,12 @@ class LivePipeline:
                 # Refresh zones periodically.
                 self._refresh_zones_if_needed()
 
-                if not self._zones:
-                    time.sleep(0.05)
-                    continue
-
                 # ------------------------------------------------------
                 # STEP 1: YOLO DETECTION
                 # ------------------------------------------------------
+                # Detection always runs (even with zero configured zones)
+                # so the live camera view / virtual fence editor on the
+                # frontend has a real, boxed video feed to show.
 
                 frame_detections = self.detector.detect(
                     frame_packet,
@@ -183,7 +191,14 @@ class LivePipeline:
                     len(frame_detections.detections),
                 )
 
-                if not frame_detections.detections:
+                # Publish an annotated JPEG-ready frame for the streaming
+                # endpoints, independent of whether any zone was breached.
+                self._update_annotated_frame(
+                    frame_packet.frame,
+                    frame_detections.detections,
+                )
+
+                if not self._zones or not frame_detections.detections:
                     continue
 
                 # ------------------------------------------------------
@@ -228,6 +243,97 @@ class LivePipeline:
             "[LivePipeline] Processing ended for camera %s",
             self.camera_id,
         )
+
+    # ------------------------------------------------------------------
+    # LIVE FRAME PUBLISHING (used by /cameras/{id}/stream & /snapshot)
+    # ------------------------------------------------------------------
+
+    def _update_annotated_frame(
+        self,
+        frame: np.ndarray,
+        detections: List[DetectionResult],
+    ) -> None:
+        """Draws bounding boxes + configured zones onto a copy of the frame
+        and stores it so the API layer can serve it as MJPEG/JPEG."""
+
+        annotated = frame.copy()
+        height, width = annotated.shape[:2]
+
+        # Draw configured zones (virtual fences / tripwires) for context.
+        for zone in self._zones:
+            raw_coords = getattr(zone, "coordinates", None) or []
+            if len(raw_coords) < 2:
+                continue
+
+            is_normalized = all(max(pt[0], pt[1]) <= 1.05 for pt in raw_coords)
+            points = []
+            for x, y in raw_coords:
+                if is_normalized:
+                    points.append((int(x * width), int(y * height)))
+                else:
+                    points.append((int(x), int(y)))
+
+            zone_type = getattr(zone, "zone_type", None)
+            zone_type_str = zone_type.value if hasattr(zone_type, "value") else str(zone_type)
+            color = (0, 60, 255) if zone_type_str == "POLYGON" else (0, 165, 255)
+
+            if zone_type_str == "POLYGON" and len(points) >= 3:
+                cv2.polylines(
+                    annotated,
+                    [np.array(points, dtype=np.int32)],
+                    isClosed=True,
+                    color=color,
+                    thickness=2,
+                )
+            elif len(points) >= 2:
+                cv2.line(annotated, points[0], points[1], color, 2)
+
+        # Draw detection boxes + labels.
+        for det in detections:
+            x1, y1, x2, y2 = (
+                int(det.bbox.x1),
+                int(det.bbox.y1),
+                int(det.bbox.x2),
+                int(det.bbox.y2),
+            )
+            cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 220, 90), 2)
+            label = f"{det.class_name} {det.confidence:.2f}"
+            label_y = max(14, y1 - 6)
+            cv2.putText(
+                annotated,
+                label,
+                (x1, label_y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 220, 90),
+                1,
+                cv2.LINE_AA,
+            )
+
+        with self._frame_lock:
+            self._latest_annotated_frame = annotated
+            self._latest_detection_count = len(detections)
+
+    def get_latest_jpeg(self, quality: int = 80) -> Optional[bytes]:
+        """Returns the most recent annotated frame encoded as JPEG bytes,
+        or None if no frame has been processed yet."""
+
+        with self._frame_lock:
+            frame = self._latest_annotated_frame
+
+        if frame is None:
+            return None
+
+        ok, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), quality])
+        if not ok:
+            return None
+
+        return buffer.tobytes()
+
+    @property
+    def latest_detection_count(self) -> int:
+        with self._frame_lock:
+            return self._latest_detection_count
 
     # ------------------------------------------------------------------
     # ZONE MANAGEMENT
