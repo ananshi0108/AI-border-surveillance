@@ -442,10 +442,6 @@ ProjectSih/
 
 From the project root:
 
-```bash
-cd /Users/mahiii/Documents/ProjectSih
-```
-
 Activate the Python environment:
 
 ```bash
@@ -473,12 +469,6 @@ http://127.0.0.1:8000/docs
 ---
 
 ## Frontend
-
-Open another terminal:
-
-```bash
-cd /Users/mahiii/Documents/ProjectSih
-```
 
 Install dependencies if required:
 
