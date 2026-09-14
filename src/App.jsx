@@ -102,56 +102,56 @@ function App() {
     className={activePage === "dashboard" ? "active" : ""}
     onClick={() => setActivePage("dashboard")}
   >
-    📊 Dashboard
+    Dashboard
   </a>
 
   <a
     className={activePage === "cameras" ? "active" : ""}
     onClick={() => setActivePage("cameras")}
   >
-    📹 Live Cameras
+    Live Cameras
   </a>
 
   <a
     className={activePage === "alerts" ? "active" : ""}
     onClick={() => setActivePage("alerts")}
   >
-    🚨 Alerts
+    Alerts
   </a>
 
   <a
     className={activePage === "map" ? "active" : ""}
     onClick={() => setActivePage("map")}
   >
-    🗺️ Border Map
+    Border Map
   </a>
 
   <a
     className={activePage === "events" ? "active" : ""}
     onClick={() => setActivePage("events")}
   >
-    📋 Event History
+    Event History
   </a>
 
   <a
     className={activePage === "analytics" ? "active" : ""}
     onClick={() => setActivePage("analytics")}
   >
-    📈 Analytics
+    Analytics
   </a>
 
   <a
     className={activePage === "fence" ? "active" : ""}
     onClick={() => setActivePage("fence")}
   >
-    🛡️ Virtual Fence
+    Virtual Fence
   </a>
 
   <a
   className={activePage === "settings" ? "active" : ""}
   onClick={() => setActivePage("settings")}
 >
-  ⚙️ Settings
+  Settings
 </a>
 </nav>
         <div className="system-status">

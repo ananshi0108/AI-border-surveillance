@@ -87,7 +87,7 @@ function VirtualFence() {
               setFenceSaved(false);
             }}
           >
-            ✏️ {drawing ? "Drawing..." : "Draw Fence"}
+            {drawing ? "Drawing..." : "Draw Fence"}
           </button>
 
           <button

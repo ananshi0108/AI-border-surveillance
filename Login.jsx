@@ -35,7 +35,7 @@ function Login({ onLogin }) {
         </div>
 
         <p className="login-security">
-          🔒 Authorized personnel only
+          Authorized personnel only
         </p>
 
       </div>
